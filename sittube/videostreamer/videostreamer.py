@@ -16,13 +16,14 @@ class VideoBuffer:
     def __init__(
         self,
         filename: str,
-        buffer_size: int = 10000,
+        buffer_size: int = 1000,
         buffer_step: int = 10,
     ):
         self.cap = cv2.VideoCapture(filename)
-        self.buffer = []
-        self.buffer_size = buffer_size
-        self.buffer_step = buffer_step
+        self.buffer = []  # stores the frames of the video
+        self.frame_index = []  # stores the frame indexes of the frames in the original video (useful for debugging)
+        self.buffer_size = buffer_size  # number of frames to store in the buffer
+        self.buffer_step = buffer_step  # number of frames to skip between frames
         self._fill_buffer()
 
     def _fill_buffer(self):
@@ -32,13 +33,28 @@ class VideoBuffer:
             if not ret:
                 break
 
-            if len(self.buffer) >= self.buffer_size:
-                self.buffer = self.buffer[self.buffer_step :]
+            if len(self.buffer) > self.buffer_size:
+                self.buffer.pop(0)
+                self.frame_index.pop(0)
 
             if step % self.buffer_step == 0:
                 self.buffer.append(frame)
+                self.frame_index.append(step)
+                self._show_frame(frame)
 
+            # print(self)
+            # time.sleep(0.1)
             step += 1
+
+    def __repr__(self):
+        return (
+            f"VideoBuffer: "
+            f"Total number of frames: {int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))}, "
+            f"Buffer step: {self.buffer_step}, "
+            f"Frames in Buffer: {len(self.buffer)}, "
+            f"Current Frame: {self.frame_index[-1]}, "
+            f"Original FPS: {self.cap.get(cv2.CAP_PROP_FPS)})"
+        )
 
     def read(self):
         if not self.buffer:
@@ -56,15 +72,21 @@ class VideoBuffer:
 
     def show(self):
         for frame in self.buffer:
-            cv2.imshow("frame", frame)
-            cv2.waitKey(100)
+            self._show_frame(frame)
+
             # interrupt the display if q is pressed
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+            if cv2.waitKey(100) & 0xFF == ord("q"):
                 break
+
+            # print(self)
+
+    def _show_frame(self, frame):
+        cv2.imshow("frame", frame)
 
 
 def main():
-    VideoBuffer("/home/alvaro/repos/mine/sittube/resources/countdown.mp4").show()
+    VideoBuffer("/home/alvaro/repos/mine/sittube/resources/countdown.mp4")
+    # VideoBuffer("/home/alvaro/repos/mine/sittube/resources/countdown.mp4").show()
 
 
 if __name__ == "__main__":
