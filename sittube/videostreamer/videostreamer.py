@@ -8,6 +8,11 @@ Let's start with reading a file from disk.
 Now, let's store the frames in a buffer and implement the read method.
 """
 
+import datetime
+import functools
+import time
+from typing import Literal
+
 import cv2
 
 
@@ -16,8 +21,8 @@ class VideoBuffer:
     def __init__(
         self,
         filename: str,
-        buffer_size: int = 250,
-        buffer_step: int = 10,
+        buffer_size: int = 50,
+        buffer_step: int = 30,
     ):
         self.cap = None
         self.buffer = []  # stores the frames of the video
@@ -25,6 +30,7 @@ class VideoBuffer:
         self.filename = filename
         self.buffer_size = buffer_size  # number of frames to store in the buffer
         self.buffer_step = buffer_step  # number of frames to skip between frames
+        self.start_ts = datetime.datetime.utcnow()
 
     def __enter__(self):
         self.cap = cv2.VideoCapture(self.filename)
@@ -57,9 +63,10 @@ class VideoBuffer:
             f"VideoBuffer: "
             f"Total number of frames: {int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))}, "
             f"Buffer step: {self.buffer_step}, "
-            f"Frames in Buffer: {len(self.buffer)}, "
-            f"Current Frame: {self.frame_index[-1] if self.frame_index else -1}, "
-            f"Original FPS: {self.cap.get(cv2.CAP_PROP_FPS)})"
+            f"Frames in buffer: {len(self.buffer)}, "
+            f"Current frame: {self.frame_index[-1] if self.frame_index else -1}, "
+            f"Original FPS: {self.cap.get(cv2.CAP_PROP_FPS)}, "
+            f"Buffered FPS: {self.fps:.2f})"
         )
 
     def __len__(self):
@@ -67,6 +74,15 @@ class VideoBuffer:
 
     def __getitem__(self, index):
         return self.buffer[index]
+
+    @functools.cached_property
+    def fps(self):
+        return self.cap.get(cv2.CAP_PROP_FPS) / self.buffer_step
+
+    def get_closest_frame_index(self, timestamp: datetime.datetime):
+        delta_ts = timestamp - self.start_ts
+        frame_index = int(delta_ts.total_seconds() * self.fps) + 1 // self.buffer_size
+        return frame_index
 
     def read(self):
         if self.buffer:
@@ -89,9 +105,29 @@ class VideoBuffer:
             # print(self)
 
 
+def read_slice(
+    video: VideoBuffer,
+    instant: datetime.datetime,
+    num_frames: int = 1,
+    direction: str = Literal["forward", "backward"],
+):
+    buf_index_at_instant = 3  # TODO: implement this
+    match direction:
+        case "forward":
+            return video[buf_index_at_instant : buf_index_at_instant + num_frames]
+        case "backward":
+            return video[buf_index_at_instant - num_frames : buf_index_at_instant]
+        case _:
+            raise ValueError(
+                "Invalid direction. Only 'forward' and 'backward' are allowed."
+            )
+
+
 def main():
+    start = datetime.datetime.utcnow()
     VIDEO_PATH = "/home/alvaro/repos/mine/sittube/resources/countdown.mp4"
     with VideoBuffer(VIDEO_PATH) as video:
+        print(video.get_closest_frame_index(start))
         # video.show()
         # while True:
         #     ret, frame = video.read()
@@ -110,9 +146,24 @@ def main():
         #     if cv2.waitKey(100) & 0xFF == ord("q"):
         #         break
 
-        for frame in video[::-1]:
-            # print(i)
-            cv2.imshow("frame", frame)
+        # for frame in read_slice(
+        #     video, datetime.datetime.utcnow(), 5, direction="forward"
+        # ):
+        #     # print(i)
+        #     cv2.imshow("frame", frame)
+        #     if cv2.waitKey(100) & 0xFF == ord("q"):
+        #         break
+
+        print(video)
+        print(len(video))
+        print(video.frame_index)
+        for _ in range(10):
+            time.sleep(1)
+            now_again = datetime.datetime.utcnow()
+            print((now_again - start).total_seconds())
+            index = video.get_closest_frame_index(now_again)
+            print(index)
+            cv2.imshow("frame", video[index])
             if cv2.waitKey(100) & 0xFF == ord("q"):
                 break
 
