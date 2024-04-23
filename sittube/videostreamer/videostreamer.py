@@ -81,7 +81,7 @@ class VideoBuffer:
 
     def get_closest_frame_index(self, timestamp: datetime.datetime):
         delta_ts = timestamp - self.start_ts
-        frame_index = int(delta_ts.total_seconds() * self.fps) + 1 // self.buffer_size
+        frame_index = int(delta_ts.total_seconds() * self.fps) % self.buffer_size
         return frame_index
 
     def read(self):
@@ -111,12 +111,15 @@ def read_slice(
     num_frames: int = 1,
     direction: str = Literal["forward", "backward"],
 ):
-    buf_index_at_instant = 3  # TODO: implement this
+    # TODO: we might want to guarantee that we don't return less than num_frames frames
+    buf_index_at_instant = video.get_closest_frame_index(instant)
     match direction:
         case "forward":
-            return video[buf_index_at_instant : buf_index_at_instant + num_frames]
+            end = min(len(video), buf_index_at_instant + num_frames)
+            return video[buf_index_at_instant:end]
         case "backward":
-            return video[buf_index_at_instant - num_frames : buf_index_at_instant]
+            start = max(0, buf_index_at_instant - num_frames)
+            return video[start:buf_index_at_instant]
         case _:
             raise ValueError(
                 "Invalid direction. Only 'forward' and 'backward' are allowed."
@@ -146,26 +149,27 @@ def main():
         #     if cv2.waitKey(100) & 0xFF == ord("q"):
         #         break
 
-        # for frame in read_slice(
-        #     video, datetime.datetime.utcnow(), 5, direction="forward"
-        # ):
-        #     # print(i)
-        #     cv2.imshow("frame", frame)
-        #     if cv2.waitKey(100) & 0xFF == ord("q"):
-        #         break
-
-        print(video)
-        print(len(video))
-        print(video.frame_index)
-        for _ in range(10):
-            time.sleep(1)
-            now_again = datetime.datetime.utcnow()
-            print((now_again - start).total_seconds())
-            index = video.get_closest_frame_index(now_again)
-            print(index)
-            cv2.imshow("frame", video[index])
+        time.sleep(5)
+        for frame in read_slice(
+            video, datetime.datetime.utcnow(), 10, direction="backward"
+        ):
+            # print(i)
+            cv2.imshow("frame", frame)
             if cv2.waitKey(100) & 0xFF == ord("q"):
                 break
+
+        # print(video)
+        # print(len(video))
+        # print(video.frame_index)
+        # for _ in range(10):
+        #     time.sleep(1)
+        #     now_again = datetime.datetime.utcnow()
+        #     print((now_again - start).total_seconds())
+        #     index = video.get_closest_frame_index(now_again)
+        #     print(index)
+        #     cv2.imshow("frame", video[index])
+        #     if cv2.waitKey(100) & 0xFF == ord("q"):
+        #         break
 
 
 if __name__ == "__main__":
