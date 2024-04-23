@@ -19,12 +19,20 @@ class VideoBuffer:
         buffer_size: int = 1000,
         buffer_step: int = 10,
     ):
-        self.cap = cv2.VideoCapture(filename)
+        self.cap = None
         self.buffer = []  # stores the frames of the video
         self.frame_index = []  # stores the frame indexes of the frames in the original video (useful for debugging)
+        self.filename = filename
         self.buffer_size = buffer_size  # number of frames to store in the buffer
         self.buffer_step = buffer_step  # number of frames to skip between frames
+
+    def __enter__(self):
+        self.cap = cv2.VideoCapture(self.filename)
         self._fill_buffer()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cap.release()
 
     def _fill_buffer(self):
         step = 0
@@ -40,7 +48,6 @@ class VideoBuffer:
             if step % self.buffer_step == 0:
                 self.buffer.append(frame)
                 self.frame_index.append(step)
-                self._show_frame(frame)
 
             # print(self)
             # time.sleep(0.1)
@@ -67,12 +74,9 @@ class VideoBuffer:
         self.buffer = []
         self._fill_buffer()
 
-    def __del__(self):
-        self.cap.release()
-
     def show(self):
         for frame in self.buffer:
-            self._show_frame(frame)
+            cv2.imshow("frame", frame)
 
             # interrupt the display if q is pressed
             if cv2.waitKey(100) & 0xFF == ord("q"):
@@ -80,13 +84,11 @@ class VideoBuffer:
 
             # print(self)
 
-    def _show_frame(self, frame):
-        cv2.imshow("frame", frame)
-
 
 def main():
-    VideoBuffer("/home/alvaro/repos/mine/sittube/resources/countdown.mp4")
-    # VideoBuffer("/home/alvaro/repos/mine/sittube/resources/countdown.mp4").show()
+    VIDEO_PATH = "/home/alvaro/repos/mine/sittube/resources/countdown.mp4"
+    with VideoBuffer(VIDEO_PATH) as video:
+        video.show()
 
 
 if __name__ == "__main__":
