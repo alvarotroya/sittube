@@ -16,7 +16,7 @@ class VideoBuffer:
     def __init__(
         self,
         filename: str,
-        buffer_size: int = 1000,
+        buffer_size: int = 250,
         buffer_step: int = 10,
     ):
         self.cap = None
@@ -42,8 +42,7 @@ class VideoBuffer:
                 break
 
             if len(self.buffer) > self.buffer_size:
-                self.buffer.pop(0)
-                self.frame_index.pop(0)
+                self._pop()
 
             if step % self.buffer_step == 0:
                 self.buffer.append(frame)
@@ -59,20 +58,19 @@ class VideoBuffer:
             f"Total number of frames: {int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))}, "
             f"Buffer step: {self.buffer_step}, "
             f"Frames in Buffer: {len(self.buffer)}, "
-            f"Current Frame: {self.frame_index[-1]}, "
+            f"Current Frame: {self.frame_index[-1] if self.frame_index else -1}, "
             f"Original FPS: {self.cap.get(cv2.CAP_PROP_FPS)})"
         )
 
     def read(self):
-        if not self.buffer:
-            return None
-        return self.buffer.pop(0)
+        if self.buffer:
+            _, frame = self._pop()
+            return True, frame
+        else:
+            return False, None
 
-    def seek(self, frame):
-        # TODO implement this correctly later, should index the ring buffer
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame)
-        self.buffer = []
-        self._fill_buffer()
+    def _pop(self):
+        return self.frame_index.pop(0), self.buffer.pop(0)
 
     def show(self):
         for frame in self.buffer:
@@ -88,7 +86,18 @@ class VideoBuffer:
 def main():
     VIDEO_PATH = "/home/alvaro/repos/mine/sittube/resources/countdown.mp4"
     with VideoBuffer(VIDEO_PATH) as video:
-        video.show()
+        # video.show()
+        while True:
+            ret, frame = video.read()
+
+            if not ret:
+                print("End of video. Exiting...")
+                break
+
+            # print(video)
+            cv2.imshow("frame", frame)
+            if cv2.waitKey(100) & 0xFF == ord("q"):
+                break
 
 
 if __name__ == "__main__":
