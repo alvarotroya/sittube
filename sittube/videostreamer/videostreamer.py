@@ -121,11 +121,12 @@ class VideoBuffer:
 
         curr_frame = self._get_closest_buffer_frame_at_timestamp(timestamp)
 
-        # TODO: we might want to guarantee that we don't return less than num_frames frames or at least log an error
+        # TODO: we might want to guarantee that we don't return less than num_frames frames or at least log a warning
         left_index = max(0, curr_frame - num_frames_left)
         right_index = min(len(self), curr_frame + num_frames_right)
 
-        return self[left_index:right_index]
+        # TODO: this method should actually return a new VideoBuffer instance, skipping now for simplicity
+        return self.buffer[left_index:right_index]
 
 
 def main():
