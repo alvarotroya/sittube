@@ -62,6 +62,12 @@ class VideoBuffer:
             f"Original FPS: {self.cap.get(cv2.CAP_PROP_FPS)})"
         )
 
+    def __len__(self):
+        return len(self.buffer)
+
+    def __getitem__(self, index):
+        return self.buffer[index]
+
     def read(self):
         if self.buffer:
             _, frame = self._pop()
@@ -87,14 +93,25 @@ def main():
     VIDEO_PATH = "/home/alvaro/repos/mine/sittube/resources/countdown.mp4"
     with VideoBuffer(VIDEO_PATH) as video:
         # video.show()
-        while True:
-            ret, frame = video.read()
+        # while True:
+        #     ret, frame = video.read()
+        #
+        #     if not ret:
+        #         print("End of video. Exiting...")
+        #         break
+        #
+        #     # print(video)
+        #     cv2.imshow("frame", frame)
+        #     if cv2.waitKey(100) & 0xFF == ord("q"):
+        #         break
+        # for i in range(len(video)):
+        #     # print(i)
+        #     cv2.imshow("frame", video[i])
+        #     if cv2.waitKey(100) & 0xFF == ord("q"):
+        #         break
 
-            if not ret:
-                print("End of video. Exiting...")
-                break
-
-            # print(video)
+        for frame in video[::-1]:
+            # print(i)
             cv2.imshow("frame", frame)
             if cv2.waitKey(100) & 0xFF == ord("q"):
                 break
