@@ -11,7 +11,6 @@ Now, let's store the frames in a buffer and implement the read method.
 import datetime
 import functools
 import time
-from typing import Literal
 
 import cv2
 
@@ -79,7 +78,7 @@ class VideoBuffer:
     def fps(self):
         return self.cap.get(cv2.CAP_PROP_FPS) / self.buffer_step
 
-    def get_closest_frame_index(self, timestamp: datetime.datetime):
+    def _get_closest_buffer_frame_at_timestamp(self, timestamp: datetime.datetime):
         delta_ts = timestamp - self.start_ts
         frame_index = int(delta_ts.total_seconds() * self.fps) % self.buffer_size
         return frame_index
@@ -104,33 +103,35 @@ class VideoBuffer:
 
             # print(self)
 
-
-def read_slice(
-    video: VideoBuffer,
-    instant: datetime.datetime,
-    num_frames: int = 1,
-    direction: str = Literal["forward", "backward"],
-):
-    # TODO: we might want to guarantee that we don't return less than num_frames frames
-    buf_index_at_instant = video.get_closest_frame_index(instant)
-    match direction:
-        case "forward":
-            end = min(len(video), buf_index_at_instant + num_frames)
-            return video[buf_index_at_instant:end]
-        case "backward":
-            start = max(0, buf_index_at_instant - num_frames)
-            return video[start:buf_index_at_instant]
-        case _:
+    def slice_at_timestamp(
+        self,
+        timestamp: datetime.datetime,
+        *,  # disallow positional arguments
+        num_frames: int | None = None,
+        num_frames_left: int = 0,
+        num_frames_right: int = 0,
+    ):
+        if not any([num_frames, num_frames_right, num_frames_left]):
             raise ValueError(
-                "Invalid direction. Only 'forward' and 'backward' are allowed."
+                "At least one of num_frames, num_frames_right or num_frames_left must be provided."
             )
+
+        if num_frames is not None:
+            num_frames_right = num_frames_left = num_frames
+
+        curr_frame = self._get_closest_buffer_frame_at_timestamp(timestamp)
+
+        # TODO: we might want to guarantee that we don't return less than num_frames frames or at least log an error
+        left_index = max(0, curr_frame - num_frames_left)
+        right_index = min(len(self), curr_frame + num_frames_right)
+
+        return self[left_index:right_index]
 
 
 def main():
     start = datetime.datetime.utcnow()
     VIDEO_PATH = "/home/alvaro/repos/mine/sittube/resources/countdown.mp4"
     with VideoBuffer(VIDEO_PATH) as video:
-        print(video.get_closest_frame_index(start))
         # video.show()
         # while True:
         #     ret, frame = video.read()
@@ -150,9 +151,8 @@ def main():
         #         break
 
         time.sleep(5)
-        for frame in read_slice(
-            video, datetime.datetime.utcnow(), 10, direction="backward"
-        ):
+        now = datetime.datetime.utcnow()
+        for frame in video.slice_at_timestamp(now, num_frames_right=200):
             # print(i)
             cv2.imshow("frame", frame)
             if cv2.waitKey(100) & 0xFF == ord("q"):
