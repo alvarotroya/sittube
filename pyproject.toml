@@ -11,6 +11,8 @@ python = "^3.11"
 tqdm = "^4.66.2"
 pydantic = "1.10"
 ruff = "^0.4.1"
+opencv-python = "^4.9.0.80"
+numpy = "^1.26.4"
 
 [build-system]
 requires = ["poetry-core"]
