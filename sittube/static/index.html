@@ -24,7 +24,7 @@
 <h2>Send Data</h2>
 <form id="dataForm">
     <input type="text" id="num_frames" name="num_frames" placeholder="Enter the number of frames to store">
-    <input type="text" id="metadata" name="metadata" placeholder="Enter metadata to store with frames">
+    <input type="text" id="metadata" name="metadata" placeholder="Enter JSON metadata to store with frames">
     <button type="button" onclick="sendData()">Send Data</button>
 </form>
 
@@ -56,15 +56,25 @@
     }
 
     function sendData() {
-        const metadata = document.getElementById('metadata').value;
+        const metadata_input = document.getElementById('metadata').value;
         const num_frames = document.getElementById('num_frames').value;
+        const metadata = metadata_input || '{}';
+
+        let parsed_metadata;
+        try {
+            parsed_metadata = JSON.parse(metadata);
+        } catch (error) {
+            console.error('Error parsing metadata:', error);
+            document.getElementById('responseArea').innerText = 'Error parsing metadata. Please enter valid JSON.';
+            return;
+        }
 
         fetch('/submit', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({metadata: JSON.parse(metadata), num_frames}),
+            body: JSON.stringify({metadata: parsed_metadata, num_frames}),
         })
             .then(data => {
                 console.log('Success:', data);
