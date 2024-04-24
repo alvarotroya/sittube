@@ -57,8 +57,9 @@
 
     function sendData() {
         const metadata_input = document.getElementById('metadata').value;
-        const num_frames = document.getElementById('num_frames').value;
-        const metadata = metadata_input || '{}';
+        const num_frames_input = document.getElementById('num_frames').value;
+        const metadata = metadata_input.trim() === "" ? "{}" : metadata_input;
+        const num_frames = num_frames_input.trim() === "" ? 10 : num_frames_input;
 
         let parsed_metadata;
         try {
