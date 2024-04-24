@@ -1,0 +1,13 @@
+# docker-compose.yml
+version: '3.8'
+services:
+  sittube:
+    build: .
+    volumes:
+      - .:/app # for live reload
+      - ${VIDEO_SOURCE}:${VIDEO_SOURCE} # target mount on container should be different, but this works for now
+      - ${TARGET_LOCATION}:${TARGET_LOCATION} # target mount on container should be different, but this works for now
+    ports:
+      - 8000:8000
+    env_file:
+      - .env
