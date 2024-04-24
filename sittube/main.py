@@ -1,8 +1,11 @@
+import datetime
+
 from fastapi import FastAPI, WebSocket
 import cv2
 import asyncio
 
-from starlette.responses import RedirectResponse
+from pydantic import BaseModel, Field
+from starlette.responses import RedirectResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect
 
@@ -45,6 +48,20 @@ async def video_endpoint(websocket: WebSocket):
         except RuntimeError:
             # swallow errors about closed connections
             pass
+
+
+class Data(BaseModel):
+    message: str
+    timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+
+
+@app.post("/submit")
+async def handle_data(data: Data):
+    print("Received message:", data.message)
+    print("Timestamp message:", data.timestamp)
+    return JSONResponse(
+        content={"message": "Data received", "yourMessage": data.message}
+    )
 
 
 if __name__ == "__main__":
