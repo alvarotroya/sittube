@@ -77,9 +77,9 @@ class Data(BaseModel):
 async def handle_data(data: Data):
     global frame_buffer
 
-    logging.info("Num frames:", data.num_frames)
-    logging.info("Metadata:", data.metadata)
-    logging.info("Timestamp message:", data.timestamp)
+    logging.info(f"Num frames: {data.num_frames}")
+    logging.info(f"Metadata: {data.metadata}")
+    logging.info(f"Timestamp message:{data.timestamp}")
 
     out_dir = app_settings.target_location / f"{data.timestamp.isoformat()}"
     out_dir.mkdir()

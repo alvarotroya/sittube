@@ -26,7 +26,7 @@ cd sittube
    See [Environment Variables](#environment-variables) for more information.
 
 ```bash
-cp .env.example .env
+cp .env_example .env
 ```
 
 1. Build and run the Docker containers using Docker Compose.
