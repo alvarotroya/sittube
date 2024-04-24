@@ -13,6 +13,12 @@ from starlette.websockets import WebSocketDisconnect
 from sittube.frame_buffer import FrameBuffer
 from sittube.settings import Settings
 
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 app_settings = Settings()
 
 app = FastAPI()
@@ -44,10 +50,10 @@ async def video_endpoint(websocket: WebSocket):
             try:
                 await websocket.send_bytes(buffer.tobytes())
             except WebSocketDisconnect:
-                print("Client disconnected.")
+                logging.info("Client disconnected.")
                 break
-            except RuntimeError as e:
-                print(f"Error sending frame: {e}")
+            except RuntimeError:
+                logging.exception("Error sending frame")
                 break
 
             await asyncio.sleep(0.033)
@@ -57,6 +63,7 @@ async def video_endpoint(websocket: WebSocket):
             await websocket.close()
         except RuntimeError:
             # swallow errors about closed connections
+            logging.debug("Websocket already closed")
             pass
 
 
@@ -70,9 +77,9 @@ class Data(BaseModel):
 async def handle_data(data: Data):
     global frame_buffer
 
-    print("Num frames:", data.num_frames)
-    print("Metadata:", data.metadata)
-    print("Timestamp message:", data.timestamp)
+    logging.info("Num frames:", data.num_frames)
+    logging.info("Metadata:", data.metadata)
+    logging.info("Timestamp message:", data.timestamp)
 
     out_dir = app_settings.target_location / f"{data.timestamp.isoformat()}"
     out_dir.mkdir()
@@ -86,7 +93,7 @@ async def handle_data(data: Data):
 def _dump_frame_buffer(frame_buffer, num_frames, out_dir):
     for i, frame in enumerate(frame_buffer.get_all_frames()[:num_frames]):
         cv2.imwrite(str(out_dir / f"{i}.jpg"), frame)
-        print(f"Saved frame to {out_dir / f'{i}.jpg'}")
+        logging.info(f"Saved frame to {out_dir / f'{i}.jpg'}")
 
 
 def _dump_buffer_metadata(data, out_dir):

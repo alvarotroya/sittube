@@ -16,6 +16,12 @@ import time  # noqa: F401
 
 import cv2
 
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 class VideoBuffer:
     # TODO add class docstring and type hints for buffer
@@ -58,7 +64,7 @@ class VideoBuffer:
 
             with self.lock:
                 if step % self.buffer_step == 0:
-                    print("writing frame to buffer")
+                    logging.info("writing frame to buffer")
                     self.buffer.append(frame)
                     self.frame_index.append(step)
 
@@ -153,7 +159,6 @@ def main():
     VIDEO_PATH = "/home/alvaro/repos/mine/sittube/resources/countdown.mp4"
     with VideoBuffer(VIDEO_PATH) as video:
         # for i in range(len(video)):
-        #     # print(i)
         #     cv2.imshow("frame", video[i])
         #     if cv2.waitKey(100) & 0xFF == ord("q"):
         #         break
@@ -162,8 +167,7 @@ def main():
         now = datetime.datetime.utcnow()
         print(video)
         for i, frame in enumerate(video.slice_at_timestamp(now, num_frames_right=10)):
-            # print(i)
-            print(f"showing frame {i} in first for loop")
+            logging.info(f"showing frame {i} in first for loop")
             cv2.imshow("foo", frame)
             if cv2.waitKey(100) & 0xFF == ord("q"):
                 break
@@ -172,14 +176,11 @@ def main():
         now = datetime.datetime.utcnow()
         print(video)
         for i, frame in enumerate(video.slice_at_timestamp(now, num_frames_right=10)):
-            # print(i)
-            print(f"showing frame {i} in second for loop")
+            logging.info(f"showing frame {i} in second for loop")
             cv2.imshow("foo", frame)
             if cv2.waitKey(100) & 0xFF == ord("q"):
                 break
-        # print(video)
-        # print(len(video))
-        # print(video.frame_index)
+
         # for _ in range(10):
         #     time.sleep(1)
         #     now_again = datetime.datetime.utcnow()
