@@ -1,3 +1,7 @@
+# NOTE
+# Please ignore this file for now, it is work in progress that has not been integrated in the main codebase yet.
+# It's here for future reference and to keep track of the progress made so far.
+
 """
 Ideally what we want here is a video/buffer like interface:
 VideoStreamer.read() -> returns a frame
@@ -5,7 +9,7 @@ VideoStreamer.seek() -> seeks to a frame
 We should probably use a context manager for opening and closing the video stream
 
 Let's start with reading a file from disk.
-Now, let's store the frames in a buffer and implement the read method.
+Now, let's store the frames in a ring buffer and implement the read method.
 """
 
 import copy
