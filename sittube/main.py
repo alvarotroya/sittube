@@ -51,13 +51,13 @@ async def video_endpoint(websocket: WebSocket):
 
 
 class Data(BaseModel):
-    message: str
+    num_frames: int = Field(default=10, ge=1, le=100)
     timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
 
 
 @app.post("/submit")
 async def handle_data(data: Data):
-    print("Received message:", data.message)
+    print("Num frames:", data.num_frames)
     print("Timestamp message:", data.timestamp)
     return JSONResponse(
         content={"message": "Data received", "yourMessage": data.message}
