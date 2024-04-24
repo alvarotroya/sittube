@@ -202,6 +202,17 @@ numpy = [
 ]
 
 [[package]]
+name = "pathlib"
+version = "1.0.1"
+description = "Object-oriented filesystem paths"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pathlib-1.0.1-py3-none-any.whl", hash = "sha256:f35f95ab8b0f59e6d354090350b44a80a80635d22efdedfa84c7ad1cf0a74147"},
+    {file = "pathlib-1.0.1.tar.gz", hash = "sha256:6940718dfc3eff4258203ad5021090933e5c04707d5ca8cc9e73c94a7894ea9f"},
+]
+
+[[package]]
 name = "pydantic"
 version = "1.10.0"
 description = "Data validation and settings management using python type hints"
@@ -651,4 +662,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "2480d9405d3b92e614acb193190569611ccf49d7467d7edd54f7f4ab92137672"
+content-hash = "122f6d92da07108c7dd12829fa1662403d4e90c6bdf178efcbb25daf9a0db38c"

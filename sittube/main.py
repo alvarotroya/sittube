@@ -11,6 +11,14 @@ from starlette.websockets import WebSocketDisconnect
 
 from sittube.frame_buffer import FrameBuffer
 
+
+"""
+TODO: 
+- Make frame buffer configurable
+- Make video source configurable
+- Make target location configurable
+"""
+
 app = FastAPI()
 
 # Mount the static directory
