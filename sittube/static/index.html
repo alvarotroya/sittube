@@ -4,65 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIT Tube</title>
+    <style>
+        form > input, form > button {
+            display: block;
+            width: 300px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Self-Checkout Camera Stream</h1>
-    <img id="videoFrame" src="play-button.png" alt="Video Frame" width="400" height="400">
+<h1>Self-Checkout Camera Stream</h1>
+<img id="videoFrame" src="play-button.png" alt="Video Frame" width="400" height="400">
 
-    <div id="data">
-        <button onclick="connect()">Start stream</button>
-        <button onclick="disconnect()">Reset stream</button>
-    </div>
+<div id="data">
+    <button onclick="connect()">Start stream</button>
+    <button onclick="disconnect()">Reset stream</button>
+</div>
 
-    <h2>Send Data</h2>
-    <form id="dataForm">
-        <input type="text" id="message" name="message" placeholder="Enter your message">
-        <button type="button" onclick="sendData()">Send Data</button>
-    </form>
+<h2>Send Data</h2>
+<form id="dataForm">
+    <input type="text" id="num_frames" name="num_frames" placeholder="Enter the number of frames to store">
+    <input type="text" id="metadata" name="metadata" placeholder="Enter metadata to store with frames">
+    <button type="button" onclick="sendData()">Send Data</button>
+</form>
 
-    <script>
-        const img = document.getElementById('videoFrame');
-        let ws;
+<div id="responseArea"></div>
 
-        function connect() {
-            ws = new WebSocket('ws://localhost:8000/video');
+<script>
+    const img = document.getElementById('videoFrame');
+    let ws;
 
-            ws.onmessage = function(event) {
-                const blob = new Blob([event.data], { type: 'image/jpeg' });
-                img.src = URL.createObjectURL(blob);
-            };
+    function connect() {
+        ws = new WebSocket('ws://localhost:8000/video');
 
-            ws.onerror = function(err) {
-                console.error('Socket encountered error: ', err.message, 'Closing socket');
-                ws.close();
-            };
+        ws.onmessage = function (event) {
+            const blob = new Blob([event.data], {type: 'image/jpeg'});
+            img.src = URL.createObjectURL(blob);
+        };
+
+        ws.onerror = function (err) {
+            console.error('Socket encountered error: ', err.message, 'Closing socket');
+            ws.close();
+        };
+    }
+
+    function disconnect() {
+        if (ws) {
+            ws.close();
+            img.src = 'play-button.png';
         }
+    }
 
-        function disconnect() {
-            if (ws) {
-                ws.close();
-                img.src = 'play-button.png';
-            }
-        }
+    function sendData() {
+        const metadata = document.getElementById('metadata').value;
+        const num_frames = document.getElementById('num_frames').value;
 
-        function sendData() {
-            const message = document.getElementById('message').value;
-
-            fetch('/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
+        fetch('/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({metadata: JSON.parse(metadata), num_frames}),
+        })
             .then(data => {
                 console.log('Success:', data);
+                document.getElementById('responseArea').innerText = JSON.stringify(data);
             })
             .catch((error) => {
                 console.error('Error:', error);
+                document.getElementById('responseArea').innerText = 'Error: ' + error;
             });
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
