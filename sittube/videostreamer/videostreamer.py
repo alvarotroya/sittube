@@ -8,6 +8,7 @@ Let's start with reading a file from disk.
 Now, let's store the frames in a buffer and implement the read method.
 """
 
+import copy
 import datetime
 import functools
 import threading
@@ -22,7 +23,7 @@ class VideoBuffer:
         self,
         filename: str,
         buffer_size: int = 50,
-        buffer_step: int = 2,
+        buffer_step: int = 1,
     ):
         self.cap = None
         self.buffer = []  # stores the frames of the video
@@ -64,8 +65,8 @@ class VideoBuffer:
                     if len(self.buffer) > self.buffer_size:
                         self._pop()
 
-            print(self)
-            time.sleep(0.1)
+            # print(self)
+            # time.sleep(0.1)
             step += 1
 
     def __repr__(self):
@@ -144,7 +145,7 @@ class VideoBuffer:
 
         # TODO: this method should actually return a new VideoBuffer instance, skipping now for simplicity
         with self.lock:
-            return self.buffer[left_index:right_index]
+            return copy.deepcopy(self.buffer[left_index:right_index])
 
 
 def main():
@@ -157,15 +158,25 @@ def main():
         #     if cv2.waitKey(100) & 0xFF == ord("q"):
         #         break
 
-        time.sleep(10)
+        # time.sleep(1)
         now = datetime.datetime.utcnow()
-        for i, frame in enumerate(video.slice_at_timestamp(now, num_frames_right=50)):
+        print(video)
+        for i, frame in enumerate(video.slice_at_timestamp(now, num_frames_right=10)):
             # print(i)
-            print(f"showing frame {i}")
+            print(f"showing frame {i} in first for loop")
             cv2.imshow("foo", frame)
             if cv2.waitKey(100) & 0xFF == ord("q"):
                 break
 
+        time.sleep(2)
+        now = datetime.datetime.utcnow()
+        print(video)
+        for i, frame in enumerate(video.slice_at_timestamp(now, num_frames_right=10)):
+            # print(i)
+            print(f"showing frame {i} in second for loop")
+            cv2.imshow("foo", frame)
+            if cv2.waitKey(100) & 0xFF == ord("q"):
+                break
         # print(video)
         # print(len(video))
         # print(video.frame_index)
