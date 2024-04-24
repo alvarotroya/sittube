@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from fastapi import FastAPI, WebSocket
 import cv2
@@ -10,21 +11,16 @@ from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect
 
 from sittube.frame_buffer import FrameBuffer
+from sittube.settings import Settings
 
-
-"""
-TODO: 
-- Make frame buffer configurable
-- Make video source configurable
-- Make target location configurable
-"""
+app_settings = Settings()
 
 app = FastAPI()
 
 # Mount the static directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-frame_buffer = FrameBuffer(10)
+frame_buffer = FrameBuffer(app_settings.frame_buffer_size)
 
 
 @app.get("/")
@@ -36,7 +32,7 @@ def root():
 async def video_endpoint(websocket: WebSocket):
     global frame_buffer
     await websocket.accept()
-    cap = cv2.VideoCapture("/home/alvaro/repos/mine/sittube/resources/countdown.mp4")
+    cap = cv2.VideoCapture(str(app_settings.video_source))
     try:
         while True:
             ret, frame = cap.read()
@@ -72,17 +68,32 @@ class Data(BaseModel):
 
 @app.post("/submit", response_model=Data)
 async def handle_data(data: Data):
+    global frame_buffer
+
     print("Num frames:", data.num_frames)
     print("Metadata:", data.metadata)
     print("Timestamp message:", data.timestamp)
-    global frame_buffer
-    for i, frame in enumerate(frame_buffer.get_all_frames()):
-        # Save the frame to a file
-        filename = f"frame_{i}_{data.timestamp.isoformat()}.jpg"
-        cv2.imwrite(filename, frame)
-        print(f"Saved frame to {filename}")
+
+    out_dir = app_settings.target_location / f"{data.timestamp.isoformat()}"
+    out_dir.mkdir()
+
+    _dump_frame_buffer(frame_buffer, out_dir)
+    _dump_buffer_metadata(data, out_dir)
 
     return data
+
+
+def _dump_frame_buffer(frame_buffer, out_dir):
+    for i, frame in enumerate(frame_buffer.get_all_frames()):
+        cv2.imwrite(str(out_dir / f"{i}.jpg"), frame)
+        print(f"Saved frame to {out_dir / f'{i}.jpg'}")
+
+
+def _dump_buffer_metadata(data, out_dir):
+    with open(out_dir / "metadata.json", "w") as f:
+        data_dict = data.dict()
+        data_dict["timestamp"] = data_dict["timestamp"].isoformat()
+        json.dump(data_dict, f, indent=4)
 
 
 if __name__ == "__main__":
