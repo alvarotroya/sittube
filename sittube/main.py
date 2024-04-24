@@ -61,7 +61,7 @@ async def video_endpoint(websocket: WebSocket):
 
 
 class Data(BaseModel):
-    num_frames: int = Field(default=10, ge=1, le=100)
+    num_frames: int = Field(default=10, ge=1, le=app_settings.frame_buffer_size)
     metadata: dict | None = None
     timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
 
@@ -77,14 +77,14 @@ async def handle_data(data: Data):
     out_dir = app_settings.target_location / f"{data.timestamp.isoformat()}"
     out_dir.mkdir()
 
-    _dump_frame_buffer(frame_buffer, out_dir)
+    _dump_frame_buffer(frame_buffer, data.num_frames, out_dir)
     _dump_buffer_metadata(data, out_dir)
 
     return data
 
 
-def _dump_frame_buffer(frame_buffer, out_dir):
-    for i, frame in enumerate(frame_buffer.get_all_frames()):
+def _dump_frame_buffer(frame_buffer, num_frames, out_dir):
+    for i, frame in enumerate(frame_buffer.get_all_frames()[:num_frames]):
         cv2.imwrite(str(out_dir / f"{i}.jpg"), frame)
         print(f"Saved frame to {out_dir / f'{i}.jpg'}")
 
